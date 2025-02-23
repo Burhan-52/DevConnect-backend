@@ -10,6 +10,7 @@ import paymentRouter from "./src/routes/payment.js";
 import cors from "cors";
 import intializedSocket from "./utils/socket.js";
 import dotenv from "dotenv";
+import http from "http"
 
 dotenv.config();
 const app = express();
