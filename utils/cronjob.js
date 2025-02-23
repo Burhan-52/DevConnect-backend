@@ -26,9 +26,9 @@ cron.schedule("0 9 * * *", async () => {
       ...new Set(pendingRequest.map((req) => req.toUserId.email)),
     ];
 
-    for (let email of listOfEmails) {
-      await run(email, "I want to connect", pendingRequest.firstName);
-    }
+    // for (let email of listOfEmails) {
+    //   await run(email, "I want to connect", pendingRequest.firstName);
+    // }
   } catch (error) {
     console.log("error in cron job" + error);
   }
