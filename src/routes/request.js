@@ -2,6 +2,7 @@ import express from "express";
 import userAuth from "../middlewares/auth.js";
 import connectionRequests from "../models/connectionRequest.js";
 import User from "../models/user.js";
+import { run } from "../../utils/sendEmail.js";
 
 const router = express.Router();
 
@@ -55,42 +56,46 @@ router.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
   }
 });
 
-router.post("/request/recived/:status/:requestId", userAuth, async (req, res) => {
-  try {
-    const { status, requestId } = req.params;
-    const loggedInUser = req.user;
+router.post(
+  "/request/recived/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      const { status, requestId } = req.params;
+      const loggedInUser = req.user;
 
-    const allowedStatus = ["accepted", "rejected"];
+      const allowedStatus = ["accepted", "rejected"];
 
-    if (!allowedStatus.includes(status)) {
-      return res
-        .status(400)
-        .json({ success: false, message: `Invalid status type ${status}` });
+      if (!allowedStatus.includes(status)) {
+        return res
+          .status(400)
+          .json({ success: false, message: `Invalid status type ${status}` });
+      }
+
+      const connectionRequest = await connectionRequests.findOne({
+        // $and: [{ toUserId: loggedInUser._id }, { status: "interested" }],
+        _id: requestId,
+        toUserId: loggedInUser._id,
+        status: "interested",
+      });
+
+      if (!connectionRequest) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Connection request is not found" });
+      }
+
+      connectionRequest.status = status;
+      const data = await connectionRequest.save();
+      return res.status(200).json({
+        success: true,
+        message: `Connection request ${status} your Request`,
+        data,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
-
-    const connectionRequest = await connectionRequests.findOne({
-      // $and: [{ toUserId: loggedInUser._id }, { status: "interested" }],
-      _id: requestId,
-      toUserId: loggedInUser._id,
-      status: "interested",
-    });
-
-    if (!connectionRequest) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Connection request is not found" });
-    }
-
-    connectionRequest.status = status;
-    const data = await connectionRequest.save();
-    return res.status(200).json({
-      success: true,
-      message: `Connection request ${status} your Request`,
-      data,
-    });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
-});
+);
 
 export default router;

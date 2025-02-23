@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema(
     },
     photoUrl: {
       type: String,
-      default: "https://www.flaticon.com/free-icon/user_149071",
+      default: "https://thumbs.dreamstime.com/b/default-profile-picture-avatar-photo-placeholder-vector-illustration-default-profile-picture-avatar-photo-placeholder-vector-189495158.jpg",
       validate(value) {
         if (!validator.isURL(value)) {
           throw new Error("Invalid Photo URL: " + value);
@@ -59,6 +59,13 @@ const userSchema = new mongoose.Schema(
     },
     skills: {
       type: [String],
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
     },
   },
   {
