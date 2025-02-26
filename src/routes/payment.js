@@ -7,7 +7,7 @@ import User from "../models/user.js";
 
 const router = express.Router();
 
-const amount = [{ GOLD: 49, SILVER: 29 }];
+var amount = { GOLD: 49, SILVER: 29 };
 
 router.post("/payment/create", userAuth, async (req, res) => {
   const { membershipType } = req.body;
@@ -23,8 +23,6 @@ router.post("/payment/create", userAuth, async (req, res) => {
         membershipType: amount[membershipType],
       },
     });
-
-    console.log(order);
 
     const savedPayment = new Payment({
       userId: req.user._id,
@@ -85,7 +83,10 @@ router.post("/payment/webhook", async (req, res) => {
 
   return res
     .status(200)
-    .json({ success: true, message: "Webhook Received Successfully" });
+    .json({
+      success: true,
+      message: "Webhook Received Successfully",
+    });
 });
 
 router.get("/payment/verify", userAuth, async (req, res) => {

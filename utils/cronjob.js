@@ -20,7 +20,6 @@ cron.schedule("0 9 * * *", async () => {
       })
       .populate("fromUserId toUserId");
 
-    console.log(pendingRequest);
 
     const listOfEmails = [
       ...new Set(pendingRequest.map((req) => req.toUserId.email)),
