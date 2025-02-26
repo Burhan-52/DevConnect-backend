@@ -78,6 +78,7 @@ router.post("/payment/webhook", async (req, res) => {
     });
 
     console.log("payment", payment);
+    payment.status = paymentDetails.status;
 
     await payment.save();
 
@@ -101,7 +102,7 @@ router.post("/payment/webhook", async (req, res) => {
       message: "Webhook Received Successfully",
     });
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 });
 
