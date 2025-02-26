@@ -5,7 +5,7 @@ import User from "../models/user.js";
 
 const router = express.Router();
 
-const USER_SAFE_DATA = "firstName lastName age skills about gender photoUrl";
+const USER_SAFE_DATA = "firstName lastName age skills about gender photoUrl isPremium";
 
 router.get("/user/request/received", userAuth, async (req, res) => {
   try {
