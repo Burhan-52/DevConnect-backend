@@ -204,7 +204,7 @@ router.post("/verifyotp", async (req, res) => {
       const validOtp = await bcrypt.compare(otp, hashedOtp);
 
       if (!validOtp) {
-        return res.json({
+        return res.status(400).json({
           success: false,
           message: "Invalid code passed. check your inbox",
         });
@@ -235,6 +235,7 @@ router.post("/verifyotp", async (req, res) => {
 router.post("/resendOtpVerificationCode", async (req, res) => {
   try {
     let { userId, email } = req.body;
+    console.log(userId, email)
     if (!userId || !email) {
       res.status(400).josn({
         success: false,
@@ -242,13 +243,14 @@ router.post("/resendOtpVerificationCode", async (req, res) => {
       });
     }
 
-    const userDetail = await User.find({ _id: userId });
+    const userDetail = await User.findOne({ _id: userId });
     if (!userDetail) {
       res.json({
         success: false,
         message: "email not found please sign up again",
       });
     }
+    console.log(userDetail)
 
     await otpVerification.deleteMany({ userId });
     await sendOtpVerificationEmail(userDetail, res);
