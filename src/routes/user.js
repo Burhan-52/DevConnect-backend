@@ -5,7 +5,8 @@ import User from "../models/user.js";
 
 const router = express.Router();
 
-const USER_SAFE_DATA = "firstName lastName age skills about gender photoUrl isPremium";
+const USER_SAFE_DATA =
+  "firstName lastName age skills about gender photoUrl isPremium";
 
 router.get("/user/request/received", userAuth, async (req, res) => {
   try {
@@ -61,11 +62,10 @@ router.get("/user/connections", userAuth, async (req, res) => {
 
 router.get("/user/feed", userAuth, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 30;
     limit = limit > 50 ? 50 : limit;
-    const skip = (page - 1) * limit;
 
+    const cursor = req.query.cursor; // Cursor is the last user's _id from previous request
     const loggedInUser = req.user;
 
     let connectionRequest = await connectionRequests
@@ -75,30 +75,84 @@ router.get("/user/feed", userAuth, async (req, res) => {
       .select("fromUserId toUserId");
 
     let hideUserFromFeed = new Set();
-
     connectionRequest.forEach((req) => {
       hideUserFromFeed.add(req.fromUserId.toString());
       hideUserFromFeed.add(req.toUserId.toString());
     });
 
-    let users = await User.find({
+    let query = {
       $and: [
         { _id: { $nin: Array.from(hideUserFromFeed) } },
         { _id: { $ne: loggedInUser._id } },
       ],
-    })
+    };
+
+    // If cursor is provided, fetch users with _id greater than cursor (assuming ObjectId sorting)
+    if (cursor) {
+      query.$and.push({ _id: { $gt: cursor } });
+    }
+
+    let users = await User.find(query)
       .select(USER_SAFE_DATA)
-      .skip(skip)
+      .sort({ _id: 1 }) // Sort in ascending order to fetch newer users
       .limit(limit);
+
+    // console.log(users);
+
+    // Determine new cursor (last user's _id)
+    const newCursor = users.length > 0 ? users.at(-1)._id : null;
 
     return res.status(200).json({
       success: true,
-      message: "Sent feed fetched Successfully",
+      message: "Feed fetched successfully",
       data: users,
+      nextCursor: newCursor, // Send cursor for the next request
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
+
+// router.get("/user/feed", userAuth, async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     let limit = parseInt(req.query.limit) || 30;
+//     limit = limit > 50 ? 50 : limit;
+//     const skip = (page - 1) * limit;
+
+//     const loggedInUser = req.user;
+
+//     let connectionRequest = await connectionRequests
+//       .find({
+//         $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+//       })
+//       .select("fromUserId toUserId");
+
+//     let hideUserFromFeed = new Set();
+
+//     connectionRequest.forEach((req) => {
+//       hideUserFromFeed.add(req.fromUserId.toString());
+//       hideUserFromFeed.add(req.toUserId.toString());
+//     });
+
+//     let users = await User.find({
+//       $and: [
+//         { _id: { $nin: Array.from(hideUserFromFeed) } },
+//         { _id: { $ne: loggedInUser._id } },
+//       ],
+//     })
+//       .select(USER_SAFE_DATA)
+//       .skip(skip)
+//       .limit(limit);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Sent feed fetched Successfully",
+//       data: users,
+//     });
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// });
 
 export default router;

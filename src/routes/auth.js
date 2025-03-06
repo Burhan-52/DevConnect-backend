@@ -16,26 +16,26 @@ router.post("/signup", async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
 
     let user = await User.findOne({ email });
-    if (user && !user.verified) {
-      await otpVerification.deleteMany({ userId: user._id });
-      await sendOtpVerificationEmail(user, res);
-      return;
-    }
+    // if (user && !user.verified) {
+    //   await otpVerification.deleteMany({ userId: user._id });
+    //   await sendOtpVerificationEmail(user, res);
+    //   return;
+    // }
 
-    if (user && !user.verified) {
+    if (user) {
       return res.status(409).json({
         success: false,
         message:
-          "Email ID already registered but Email is not verified please verify",
+          "Email ID already registered ",
       });
     }
 
-    if (user && user.verified) {
-      return res.status(401).json({
-        success: false,
-        message: "Email is already registered and verified please Login!!",
-      });
-    }
+    // if (user && user.verified) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Email is already registered and verified please Login!!",
+    //   });
+    // }
     const hashPassword = await bcrypt.hash(password, 10);
 
     const saveUser = await User.create({
@@ -45,12 +45,22 @@ router.post("/signup", async (req, res) => {
       password: hashPassword,
     });
 
-    // let token = jwt.sign({ _id: saveUser._id }, process.env.JWT_SECRET);
+    let token = jwt.sign({ _id: saveUser._id }, process.env.JWT_SECRET);
 
-    if (saveUser) {
-      await sendOtpVerificationEmail(saveUser, res);
-      return;
-    }
+    return res
+      .status(200)
+      .cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      })
+      .json({
+        data: saveUser,
+        success: true,
+      });
+
+    // if (saveUser) {
+    //   await sendOtpVerificationEmail(saveUser, res);
+    //   return;
+    // }
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -235,7 +245,6 @@ router.post("/verifyotp", async (req, res) => {
 router.post("/resendOtpVerificationCode", async (req, res) => {
   try {
     let { userId, email } = req.body;
-    console.log(userId, email)
     if (!userId || !email) {
       res.status(400).josn({
         success: false,
@@ -250,7 +259,6 @@ router.post("/resendOtpVerificationCode", async (req, res) => {
         message: "email not found please sign up again",
       });
     }
-    console.log(userDetail)
 
     await otpVerification.deleteMany({ userId });
     await sendOtpVerificationEmail(userDetail, res);
